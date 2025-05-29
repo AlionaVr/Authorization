@@ -3,6 +3,7 @@ package org.authorization.service;
 import org.authorization.Authorities;
 import org.authorization.exception.InvalidCredentials;
 import org.authorization.exception.UnauthorizedUser;
+import org.authorization.model.User;
 import org.authorization.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,10 +27,11 @@ public class AuthorizationServiceTests {
 
     @Test
     public void shouldReturnAuthoritiesForValidCredentials() {
+        User user = new User("admin", "admin");
         when(userRepository.getUserAuthorities("admin", "admin"))
                 .thenReturn(List.of(Authorities.READ, Authorities.WRITE));
 
-        List<Authorities> result = service.getAuthorities("admin", "admin");
+        List<Authorities> result = service.getAuthorities(user);
 
         assertEquals(2, result.size());
         assertTrue(result.contains(Authorities.READ));
@@ -38,18 +40,20 @@ public class AuthorizationServiceTests {
 
     @Test
     public void shouldThrowInvalidCredentialsForEmptyInput() {
+        User user = new User("", "");
         assertThrows(InvalidCredentials.class, () -> {
-            service.getAuthorities("", "");
+            service.getAuthorities(user);
         });
     }
 
     @Test
     public void shouldThrowUnauthorizedUserWhenUserNotFound() {
+        User user = new User("unknown", "wrong");
         when(userRepository.getUserAuthorities("unknown", "wrong"))
                 .thenReturn(List.of());
 
         assertThrows(UnauthorizedUser.class, () -> {
-            service.getAuthorities("unknown", "wrong");
+            service.getAuthorities(user);
         });
     }
 }

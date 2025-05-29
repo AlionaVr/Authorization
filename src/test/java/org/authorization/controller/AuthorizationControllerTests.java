@@ -1,8 +1,8 @@
 package org.authorization.controller;
 
 import org.authorization.Authorities;
-import org.authorization.exception.InvalidCredentials;
 import org.authorization.exception.UnauthorizedUser;
+import org.authorization.model.User;
 import org.authorization.service.AuthorizationService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -15,8 +15,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,7 +31,7 @@ public class AuthorizationControllerTests {
 
     @Test
     public void shouldReturnAuthoritiesForValidUser() throws Exception {
-        when(service.getAuthorities("admin", "admin"))
+        when(service.getAuthorities(any(User.class)))
                 .thenReturn(List.of(Authorities.READ, Authorities.WRITE, Authorities.DELETE));
 
         mockMvc.perform(get("/authorize")
@@ -43,18 +45,18 @@ public class AuthorizationControllerTests {
 
     @Test
     public void shouldReturnBadRequestForEmptyInput() throws Exception {
-        when(service.getAuthorities("", ""))
-                .thenThrow(new InvalidCredentials("User name or password is empty"));
-
         mockMvc.perform(get("/authorize")
-                        .param("user", "")
+                        .param("username", "")
                         .param("password", ""))
-                .andExpect(status().isBadRequest());
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.username").value("User name must not be empty"))
+                .andExpect(jsonPath("$.password").value("password must not be empty"));
     }
 
     @Test
     public void shouldReturnUnauthorizedForNonRegisteredUser() throws Exception {
-        when(service.getAuthorities("unknown", "pass"))
+        when(service.getAuthorities(any(User.class)))
                 .thenThrow(new UnauthorizedUser("Unknown user unknown"));
 
         mockMvc.perform(get("/authorize")
