@@ -1,0 +1,8 @@
+version: '0.1'
+services:
+  spring-app:
+    build: ./
+    image: myapp:0.1
+    container_name: app-authorization
+    ports:
+      - '8080:8080'
